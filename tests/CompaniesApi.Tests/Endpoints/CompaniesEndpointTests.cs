@@ -4,6 +4,7 @@ using System.Text.Json;
 using CompaniesApi.Models;
 using CompaniesApi.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace CompaniesApi.Tests.Endpoints;

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Xml.Linq;
 using CompaniesApi.Models;
-using Microsoft.Extensions.Logging;
 
 namespace CompaniesApi.Services;
 

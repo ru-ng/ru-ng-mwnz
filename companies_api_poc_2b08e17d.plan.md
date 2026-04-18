@@ -3,7 +3,7 @@ name: Companies API — Take-home Evaluation
 overview: Build an ASP.NET Core 9 Minimal API that fetches a company by ID from a static GitHub XML source, transforms the XML to JSON, and returns it — with resilience, structured logging, input validation, OpenAPI docs, and thorough tests.
 todos:
   - id: scaffold
-    content: Create solution with CompaniesApi and CompaniesApi.Tests projects
+    content: Create solution with src/CompaniesApi, tests/CompaniesApi.Tests, and src/tests solution folders in the .sln
     status: pending
   - id: models
     content: Add Company and ApiError record models
@@ -33,7 +33,7 @@ todos:
     content: Add multi-stage Dockerfile (restore → build → publish → runtime)
     status: pending
   - id: readme
-    content: Write README.md with prerequisites, run instructions, curl examples, and test command
+    content: Write README.md with prerequisites, run instructions, Swagger URL, and test command
     status: pending
 isProject: false
 ---
@@ -62,22 +62,26 @@ The upstream returns XML with root element `<Data>`:
 
 ## Project structure
 
+Solution (`CompaniesApi.sln`) uses **solution folders** `src` and `tests` (virtual grouping; projects live on disk as below).
+
 ```
-CompaniesApi/
-  CompaniesApi.csproj          (.NET 9 minimal API)
-  Program.cs                   (DI wiring, endpoint registration, Swagger)
-  Models/
-    Company.cs                 (output JSON model)
-    ApiError.cs                (error response model)
-  Services/
-    IXmlCompanyClient.cs       (interface for upstream HTTP calls)
-    XmlCompanyClient.cs        (HttpClient + XML parsing + structured logging)
-CompaniesApi.Tests/
-  CompaniesApi.Tests.csproj
-  Services/
-    XmlCompanyClientTests.cs   (unit tests — mocked HttpClient)
-  Endpoints/
-    CompaniesEndpointTests.cs  (integration tests via WebApplicationFactory)
+src/
+  CompaniesApi/
+    CompaniesApi.csproj        (.NET 9 minimal API)
+    Program.cs                 (DI wiring, endpoint registration, Swagger)
+    Models/
+      Company.cs               (output JSON model)
+      ApiError.cs              (error response model)
+    Services/
+      IXmlCompanyClient.cs     (interface for upstream HTTP calls)
+      XmlCompanyClient.cs      (HttpClient + XML parsing + structured logging)
+tests/
+  CompaniesApi.Tests/
+    CompaniesApi.Tests.csproj
+    Services/
+      XmlCompanyClientTests.cs (unit tests — mocked HttpClient)
+    Endpoints/
+      CompaniesEndpointTests.cs (integration tests via WebApplicationFactory)
 ```
 
 ## Key design decisions
@@ -144,7 +148,7 @@ Multi-stage build so the evaluator only needs Docker (not .NET SDK):
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet publish CompaniesApi/CompaniesApi.csproj -c Release -o /app/publish
+RUN dotnet publish src/CompaniesApi/CompaniesApi.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
@@ -161,9 +165,9 @@ docker run -p 5000:8080 companies-api
 ## README
 Covers:
 - Prerequisites: .NET 9 SDK **or** Docker (either works)
-- `dotnet run` path with Swagger URL
+- `dotnet run --project src/CompaniesApi/CompaniesApi.csproj` with Swagger URL
 - `docker build` + `docker run` path
 - `dotnet test` command
-- curl examples for all four scenarios (200, 404, 400, and the second valid company)
+- Swagger UI at `/swagger` for trying all scenarios (200, 404, 400, second valid company, 502 notes)
 
 

@@ -12,10 +12,10 @@ ASP.NET Core 9 minimal API that exposes `GET /companies/{id}`, loads company XML
 From the repository root:
 
 ```bash
-dotnet run --project CompaniesApi/CompaniesApi.csproj
+dotnet run --project src/CompaniesApi/CompaniesApi.csproj
 ```
 
-The app listens on **http://localhost:5000** (see `CompaniesApi/Properties/launchSettings.json`). In **Development**, Swagger UI is at **http://localhost:5000/swagger**.
+The app listens on **http://localhost:5000** (see `src/CompaniesApi/Properties/launchSettings.json`). In **Development**, Swagger UI is at **http://localhost:5000/swagger**.
 
 ## Run with Docker
 
@@ -52,7 +52,7 @@ Swagger shows response status and body for each call.
 
 | Setting           | Purpose |
 |------------------|---------|
-| `UpstreamBaseUrl` | Base URL for `{id}.xml` requests (see `CompaniesApi/appsettings.json`). |
+| `UpstreamBaseUrl` | Base URL for `{id}.xml` requests (see `src/CompaniesApi/appsettings.json`). |
 
 ## Behavior summary
 

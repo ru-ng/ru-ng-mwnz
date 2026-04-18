@@ -3,9 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompaniesApi", "CompaniesApi\CompaniesApi.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C1A1A1A1-A1A1-A1A1-A1A1-A1A1A1A1A1A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompaniesApi.Tests", "CompaniesApi.Tests\CompaniesApi.Tests.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D2B2B2B2-B2B2-B2B2-B2B2-B2B2B2B2B2B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompaniesApi", "src\CompaniesApi\CompaniesApi.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompaniesApi.Tests", "tests\CompaniesApi.Tests\CompaniesApi.Tests.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,5 +25,12 @@ Global
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {C1A1A1A1-A1A1-A1A1-A1A1-A1A1A1A1A1A1}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {D2B2B2B2-B2B2-B2B2-B2B2-B2B2B2B2B2B2}
 	EndGlobalSection
 EndGlobal
