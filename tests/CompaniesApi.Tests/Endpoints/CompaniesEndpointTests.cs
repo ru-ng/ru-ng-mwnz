@@ -37,7 +37,7 @@ public sealed class CompaniesEndpointTests
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
 
         var company = await response.Content.ReadFromJsonAsync<Company>(JsonOptions);
-        ((object?)company).Should().NotBeNull();
+        company.Should().NotBeNull();
         company!.Id.Should().Be(1);
         company.Name.Should().Be("MWNZ");
         company.Description.Should().Be("..is awesome");
@@ -54,7 +54,7 @@ public sealed class CompaniesEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
-        ((object?)error).Should().NotBeNull();
+        error.Should().NotBeNull();
         error!.Error.Should().Be("Bad Request");
         error.ErrorDescription.Should().ContainEquivalentOf("positive");
     }
@@ -74,7 +74,7 @@ public sealed class CompaniesEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
         var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
-        ((object?)error).Should().NotBeNull();
+        error.Should().NotBeNull();
         error!.Error.Should().Be("Not Found");
         error.ErrorDescription.Should().Contain("404");
     }
@@ -97,7 +97,7 @@ public sealed class CompaniesEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
 
         var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
-        ((object?)error).Should().NotBeNull();
+        error.Should().NotBeNull();
         error!.Error.Should().Be("Upstream Error");
         error.ErrorDescription.Should().NotBeNull();
     }

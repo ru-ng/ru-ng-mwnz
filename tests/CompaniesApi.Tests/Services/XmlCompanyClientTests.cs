@@ -38,7 +38,7 @@ public sealed class XmlCompanyClientTests
         var result = await sut.GetCompanyAsync(1);
 
         result.StatusCode.Should().Be(HttpStatusCode.OK);
-        ((object?)result.Company).Should().NotBeNull();
+        result.Company.Should().NotBeNull();
         result.Company!.Id.Should().Be(1);
         result.Company.Name.Should().Be("MWNZ");
         result.Company.Description.Should().Be("..is awesome");
@@ -54,7 +54,7 @@ public sealed class XmlCompanyClientTests
         var result = await sut.GetCompanyAsync(99);
 
         result.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        ((object?)result.Company).Should().BeNull();
+        result.Company.Should().BeNull();
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class XmlCompanyClientTests
         var result = await sut.GetCompanyAsync(1);
 
         result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
-        ((object?)result.Company).Should().BeNull();
+        result.Company.Should().BeNull();
         result.ErrorDescription.Should().NotBeNull();
     }
 
@@ -82,7 +82,7 @@ public sealed class XmlCompanyClientTests
         var result = await sut.GetCompanyAsync(1);
 
         result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        ((object?)result.Company).Should().BeNull();
+        result.Company.Should().BeNull();
         result.ErrorDescription.Should().NotBeNull().And.ContainEquivalentOf("parse");
     }
 
@@ -99,7 +99,7 @@ public sealed class XmlCompanyClientTests
         var result = await sut.GetCompanyAsync(1);
 
         result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        ((object?)result.Company).Should().BeNull();
+        result.Company.Should().BeNull();
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public sealed class XmlCompanyClientTests
         var result = await sut.GetCompanyAsync(1);
 
         result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        ((object?)result.Company).Should().BeNull();
+        result.Company.Should().BeNull();
         result.ErrorDescription.Should().NotBeNull().And.Contain("Upstream request failed");
     }
 
