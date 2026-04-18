@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using CompaniesApi.Models;
 using CompaniesApi.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -32,14 +33,14 @@ public sealed class CompaniesEndpointTests
 
         var response = await client.GetAsync("/companies/1");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
 
         var company = await response.Content.ReadFromJsonAsync<Company>(JsonOptions);
-        Assert.NotNull(company);
-        Assert.Equal(1, company.Id);
-        Assert.Equal("MWNZ", company.Name);
-        Assert.Equal("..is awesome", company.Description);
+        ((object?)company).Should().NotBeNull();
+        company!.Id.Should().Be(1);
+        company.Name.Should().Be("MWNZ");
+        company.Description.Should().Be("..is awesome");
     }
 
     [Fact]
@@ -51,11 +52,11 @@ public sealed class CompaniesEndpointTests
 
         var response = await client.GetAsync("/companies/0");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
-        Assert.NotNull(error);
-        Assert.Equal("Bad Request", error.Error);
-        Assert.Contains("positive", error.ErrorDescription, StringComparison.OrdinalIgnoreCase);
+        ((object?)error).Should().NotBeNull();
+        error!.Error.Should().Be("Bad Request");
+        error.ErrorDescription.Should().ContainEquivalentOf("positive");
     }
 
     [Fact]
@@ -70,12 +71,12 @@ public sealed class CompaniesEndpointTests
         var client = factory.CreateClient();
 
         var response = await client.GetAsync("/companies/404");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
-        Assert.NotNull(error);
-        Assert.Equal("Not Found", error.Error);
-        Assert.Contains("404", error.ErrorDescription);
+        ((object?)error).Should().NotBeNull();
+        error!.Error.Should().Be("Not Found");
+        error.ErrorDescription.Should().Contain("404");
     }
 
     [Fact]
@@ -93,12 +94,12 @@ public sealed class CompaniesEndpointTests
         var client = factory.CreateClient();
 
         var response = await client.GetAsync("/companies/1");
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
 
-        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
         var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
-        Assert.NotNull(error);
-        Assert.Equal("Upstream Error", error.Error);
-        Assert.NotNull(error.ErrorDescription);
+        ((object?)error).Should().NotBeNull();
+        error!.Error.Should().Be("Upstream Error");
+        error.ErrorDescription.Should().NotBeNull();
     }
 
     private static WebApplicationFactory<Program> CreateFactory(TestXmlCompanyClient client)

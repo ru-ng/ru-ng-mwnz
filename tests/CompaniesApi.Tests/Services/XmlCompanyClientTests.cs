@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using CompaniesApi.Services;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -36,12 +37,12 @@ public sealed class XmlCompanyClientTests
         var sut = CreateClient(handler);
         var result = await sut.GetCompanyAsync(1);
 
-        Assert.Equal(HttpStatusCode.OK, result.StatusCode);
-        Assert.NotNull(result.Company);
-        Assert.Equal(1, result.Company.Id);
-        Assert.Equal("MWNZ", result.Company.Name);
-        Assert.Equal("..is awesome", result.Company.Description);
-        Assert.Null(result.ErrorDescription);
+        result.StatusCode.Should().Be(HttpStatusCode.OK);
+        ((object?)result.Company).Should().NotBeNull();
+        result.Company!.Id.Should().Be(1);
+        result.Company.Name.Should().Be("MWNZ");
+        result.Company.Description.Should().Be("..is awesome");
+        result.ErrorDescription.Should().BeNull();
     }
 
     [Fact]
@@ -52,8 +53,8 @@ public sealed class XmlCompanyClientTests
 
         var result = await sut.GetCompanyAsync(99);
 
-        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
-        Assert.Null(result.Company);
+        result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ((object?)result.Company).Should().BeNull();
     }
 
     [Fact]
@@ -64,9 +65,9 @@ public sealed class XmlCompanyClientTests
 
         var result = await sut.GetCompanyAsync(1);
 
-        Assert.Equal(HttpStatusCode.InternalServerError, result.StatusCode);
-        Assert.Null(result.Company);
-        Assert.NotNull(result.ErrorDescription);
+        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        ((object?)result.Company).Should().BeNull();
+        result.ErrorDescription.Should().NotBeNull();
     }
 
     [Fact]
@@ -80,9 +81,9 @@ public sealed class XmlCompanyClientTests
 
         var result = await sut.GetCompanyAsync(1);
 
-        Assert.Equal(HttpStatusCode.BadGateway, result.StatusCode);
-        Assert.Null(result.Company);
-        Assert.Contains("parse", result.ErrorDescription, StringComparison.OrdinalIgnoreCase);
+        result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        ((object?)result.Company).Should().BeNull();
+        result.ErrorDescription.Should().NotBeNull().And.ContainEquivalentOf("parse");
     }
 
     [Fact]
@@ -97,8 +98,8 @@ public sealed class XmlCompanyClientTests
 
         var result = await sut.GetCompanyAsync(1);
 
-        Assert.Equal(HttpStatusCode.BadGateway, result.StatusCode);
-        Assert.Null(result.Company);
+        result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        ((object?)result.Company).Should().BeNull();
     }
 
     [Fact]
@@ -109,9 +110,9 @@ public sealed class XmlCompanyClientTests
 
         var result = await sut.GetCompanyAsync(1);
 
-        Assert.Equal(HttpStatusCode.BadGateway, result.StatusCode);
-        Assert.Null(result.Company);
-        Assert.Contains("Upstream request failed", result.ErrorDescription, StringComparison.Ordinal);
+        result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        ((object?)result.Company).Should().BeNull();
+        result.ErrorDescription.Should().NotBeNull().And.Contain("Upstream request failed");
     }
 
     private sealed class StubHandler : HttpMessageHandler
