@@ -21,10 +21,10 @@ The app listens on **http://localhost:5000** (see `src/CompaniesApi/Properties/l
 
 ```bash
 docker build -t companies-api .
-docker run -p 5000:8080 companies-api
+docker run -e ASPNETCORE_ENVIRONMENT=Development -p 5000:8080 companies-api
 ```
 
-Then open **http://localhost:5000/swagger** to try the API (same URL as in [Try the API (Swagger)](#try-the-api-swagger)).
+`ASPNETCORE_ENVIRONMENT=Development` enables Swagger UI, consistent with [Run locally](#run-locally). Then open **http://localhost:5000/swagger** to try the API.
 
 ## Tests
 
