@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using CompaniesApi.Services;
 
@@ -13,7 +14,14 @@ builder.Host.UseDefaultServiceProvider(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; });
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    
+    if(File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
+});
 
 var upstreamBaseUrl = builder.Configuration["UpstreamBaseUrl"]
                       ?? throw new InvalidOperationException("UpstreamBaseUrl is not configured.");

@@ -5,10 +5,21 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CompaniesApi.Controllers;
 
+/// <summary>
+/// Exposes company resources from upstream XML
+/// </summary>
+/// <param name="client"></param>
+/// <param name="logger"></param>
 [ApiController]
 [Route("[controller]")]
 public class CompaniesController(IXmlCompanyClient client, ILogger<CompaniesController> logger) : ControllerBase
 {
+    /// <summary>
+    /// Returns a company by id in JSON format, or returns a structured error.
+    /// </summary>
+    /// <param name="id">Company ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>200 with <see cref="Company"/></returns>
     [HttpGet("{id:int}", Name = "GetCompany")]
     [ProducesResponseType<Company>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
