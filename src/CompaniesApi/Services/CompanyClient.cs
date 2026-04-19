@@ -16,7 +16,7 @@ public sealed class CompanyClient(ICompanyDataSource dataSource, ICompanyParser 
 
         try
         {
-            var company = parser.Parse(rawResult.Content);
+            var company = parser.Parse(rawResult.Content!);
             return new CompanyResult(HttpStatusCode.OK, company, null);
         }
         catch (Exception ex)
