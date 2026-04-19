@@ -58,6 +58,22 @@ public sealed class CompaniesEndpointTests
         error!.Error.Should().Be("Bad Request");
         error.ErrorDescription.Should().ContainEquivalentOf("positive");
     }
+    
+    [Fact]
+    public async Task GetCompany_NegativeId_Returns400AndApiError()
+    {
+        var stub = new TestXmlCompanyClient();
+        await using var factory = CreateFactory(stub);
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/companies/-1");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await response.Content.ReadFromJsonAsync<ApiError>(JsonOptions);
+        error.Should().NotBeNull();
+        error!.Error.Should().Be("Bad Request");
+        error.ErrorDescription.Should().ContainEquivalentOf("positive");
+    }
 
     [Fact]
     public async Task GetCompany_NotFound_Returns404AndApiError()

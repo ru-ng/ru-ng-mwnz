@@ -3,6 +3,13 @@ using CompaniesApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.UseDefaultServiceProvider(options => 
+    {
+        options.ValidateScopes = true; // a service must not depend on somthing with a shorter lifetime than itself
+        options.ValidateOnBuild = true; // captures during build instead of runtime
+    }
+);
+
 builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase; });
 
