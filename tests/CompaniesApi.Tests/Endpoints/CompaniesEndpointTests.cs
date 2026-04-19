@@ -20,7 +20,7 @@ public sealed class CompaniesEndpointTests
     [Fact]
     public async Task GetCompany_ValidId_Returns200AndJsonCompany()
     {
-        var stub = new TestXmlCompanyClient
+        var stub = new TestCompanyClient
         {
             Result = new CompanyFetchResult(
                 HttpStatusCode.OK,
@@ -46,7 +46,7 @@ public sealed class CompaniesEndpointTests
     [Fact]
     public async Task GetCompany_InvalidId_Returns400AndApiError()
     {
-        var stub = new TestXmlCompanyClient();
+        var stub = new TestCompanyClient();
         await using var factory = CreateFactory(stub);
         var client = factory.CreateClient();
 
@@ -62,7 +62,7 @@ public sealed class CompaniesEndpointTests
     [Fact]
     public async Task GetCompany_NegativeId_Returns400AndApiError()
     {
-        var stub = new TestXmlCompanyClient();
+        var stub = new TestCompanyClient();
         await using var factory = CreateFactory(stub);
         var client = factory.CreateClient();
 
@@ -78,7 +78,7 @@ public sealed class CompaniesEndpointTests
     [Fact]
     public async Task GetCompany_NotFound_Returns404AndApiError()
     {
-        var stub = new TestXmlCompanyClient
+        var stub = new TestCompanyClient
         {
             Result = new CompanyFetchResult(HttpStatusCode.NotFound, null, null)
         };
@@ -98,7 +98,7 @@ public sealed class CompaniesEndpointTests
     [Fact]
     public async Task GetCompany_UpstreamFailure_Returns502AndApiError()
     {
-        var stub = new TestXmlCompanyClient
+        var stub = new TestCompanyClient
         {
             Result = new CompanyFetchResult(
                 HttpStatusCode.BadGateway,
@@ -118,20 +118,20 @@ public sealed class CompaniesEndpointTests
         error.ErrorDescription.Should().NotBeNull();
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(TestXmlCompanyClient client)
+    private static WebApplicationFactory<Program> CreateFactory(TestCompanyClient client)
     {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
-                var descriptor = services.Single(d => d.ServiceType == typeof(IXmlCompanyClient));
+                var descriptor = services.Single(d => d.ServiceType == typeof(ICompanyClient));
                 services.Remove(descriptor);
-                services.AddSingleton<IXmlCompanyClient>(client);
+                services.AddSingleton<ICompanyClient>(client);
             });
         });
     }
 
-    private sealed class TestXmlCompanyClient : IXmlCompanyClient
+    private sealed class TestCompanyClient : ICompanyClient
     {
         public CompanyFetchResult Result { get; init; } =
             new(HttpStatusCode.OK, new Company(1, "x", "y"), null);

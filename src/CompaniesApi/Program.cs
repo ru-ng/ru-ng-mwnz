@@ -26,10 +26,10 @@ builder.Services.AddSwaggerGen(c =>
 var upstreamBaseUrl = builder.Configuration["UpstreamBaseUrl"]
                       ?? throw new InvalidOperationException("UpstreamBaseUrl is not configured.");
 
-builder.Services.AddHttpClient<XmlCompanyClient>(client => { client.BaseAddress = new Uri(upstreamBaseUrl); })
+builder.Services.AddHttpClient<CompanyClient>(client => { client.BaseAddress = new Uri(upstreamBaseUrl); })
     .AddStandardResilienceHandler();
 
-builder.Services.AddScoped<IXmlCompanyClient>(sp => sp.GetRequiredService<XmlCompanyClient>());
+builder.Services.AddScoped<ICompanyClient>(sp => sp.GetRequiredService<CompanyClient>());
 
 var app = builder.Build();
 

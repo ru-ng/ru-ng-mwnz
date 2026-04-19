@@ -12,7 +12,7 @@ namespace CompaniesApi.Controllers;
 /// <param name="logger"></param>
 [ApiController]
 [Route("[controller]")]
-public class CompaniesController(IXmlCompanyClient client, ILogger<CompaniesController> logger) : ControllerBase
+public class CompaniesController(ICompanyClient client, ILogger<CompaniesController> logger) : ControllerBase
 {
     /// <summary>
     /// Returns a company by id in JSON format, or returns a structured error.

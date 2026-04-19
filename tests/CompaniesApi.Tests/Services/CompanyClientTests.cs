@@ -7,15 +7,15 @@ using Xunit;
 
 namespace CompaniesApi.Tests.Services;
 
-public sealed class XmlCompanyClientTests
+public sealed class CompanyClientTests
 {
-    private static XmlCompanyClient CreateClient(HttpMessageHandler handler)
+    private static CompanyClient CreateClient(HttpMessageHandler handler)
     {
         var httpClient = new HttpClient(handler)
         {
             BaseAddress = new Uri("https://example.test/xml-api/")
         };
-        return new XmlCompanyClient(httpClient, NullLogger<XmlCompanyClient>.Instance);
+        return new CompanyClient(httpClient, NullLogger<CompanyClient>.Instance);
     }
 
     [Fact]

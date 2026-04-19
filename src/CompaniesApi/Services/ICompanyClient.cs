@@ -1,6 +1,6 @@
 namespace CompaniesApi.Services;
 
-public interface IXmlCompanyClient
+public interface ICompanyClient
 {
     Task<CompanyFetchResult> GetCompanyAsync(int id, CancellationToken cancellationToken = default);
 }
