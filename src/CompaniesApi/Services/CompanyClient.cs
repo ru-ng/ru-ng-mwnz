@@ -1,100 +1,28 @@
 using System.Net;
-using System.Xml.Linq;
-using CompaniesApi.Models;
 
 namespace CompaniesApi.Services;
 
-public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> logger) : ICompanyClient
+public sealed class CompanyClient(ICompanyDataSource dataSource, ICompanyParser parser, ILogger<CompanyClient> logger) : ICompanyClient
 {
     public async Task<CompanyResult> GetCompanyAsync(int id, CancellationToken cancellationToken = default)
     {
-        var requestUri = $"{id}.xml";
-        var upstreamUrl = new Uri(httpClient.BaseAddress!, requestUri).ToString();
+        var rawResult = await dataSource.GetAsync(id, cancellationToken);
 
-        logger.LogInformation("Fetching company XML from {UpstreamUrl}", upstreamUrl);
-
-        HttpResponseMessage response;
-        try
-        {
-            response = await httpClient.GetAsync(requestUri, cancellationToken);
-        }
-        catch (HttpRequestException ex)
-        {
-            logger.LogError(ex, "Network error requesting {UpstreamUrl}", upstreamUrl);
-            return new CompanyResult(
-                HttpStatusCode.BadGateway,
-                null,
-                $"Upstream request failed: {ex.Message}");
-        }
-        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-        {
-            logger.LogError(ex, "Timeout requesting {UpstreamUrl}", upstreamUrl);
-            return new CompanyResult(
-                HttpStatusCode.BadGateway,
-                null,
-                "Upstream request timed out.");
-        }
-
-        logger.LogInformation(
-            "Upstream responded with {StatusCode} for {UpstreamUrl}",
-            (int)response.StatusCode,
-            upstreamUrl);
-
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        if (rawResult.Status == RawDataStatus.NotFound)
             return new CompanyResult(HttpStatusCode.NotFound, null, null);
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var reason = $"Upstream returned {(int)response.StatusCode} {response.ReasonPhrase}.";
-            logger.LogWarning("Non-success from upstream: {Reason}", reason);
-            return new CompanyResult(response.StatusCode, null, reason);
-        }
-
-        string xml;
-        try
-        {
-            xml = await ReadResponseContentAsync(response, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed reading upstream body from {UpstreamUrl}", upstreamUrl);
-            return new CompanyResult(
-                HttpStatusCode.BadGateway,
-                null,
-                "Failed reading upstream response body.");
-        }
+        if (rawResult.Status == RawDataStatus.Error)
+            return new CompanyResult(HttpStatusCode.BadGateway, null, rawResult.ErrorDescription);
 
         try
         {
-            var company = ParseCompanyFromXml(xml);
+            var company = parser.Parse(rawResult.Content);
             return new CompanyResult(HttpStatusCode.OK, company, null);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed parsing XML from {UpstreamUrl}", upstreamUrl);
-            return new CompanyResult(
-                HttpStatusCode.BadGateway,
-                null,
-                $"Failed to parse upstream XML: {ex.Message}");
+            logger.LogError(ex, "Failed parsing content for company Id {Id}", id);
+            return new CompanyResult(HttpStatusCode.BadGateway, null, $"Failed to parse content: {ex.Message}");
         }
-    }
-
-    private static async Task<string> ReadResponseContentAsync(HttpResponseMessage response,
-        CancellationToken cancellationToken) =>
-        await response.Content.ReadAsStringAsync(cancellationToken);
-
-    private static Company ParseCompanyFromXml(string xml)
-    {
-        var doc = XDocument.Parse(xml);
-        var root = doc.Root ?? throw new InvalidOperationException("Missing root element.");
-        if (!string.Equals(root.Name.LocalName, "Data", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"Unexpected root element '{root.Name.LocalName}'.");
-
-        var parsedId = int.Parse(root.Element("id")?.Value ?? throw new InvalidOperationException("Missing id."));
-        var name = root.Element("name")?.Value ?? throw new InvalidOperationException("Missing name.");
-        var description = root.Element("description")?.Value ??
-                          throw new InvalidOperationException("Missing description.");
-
-        return new Company(parsedId, name, description);
     }
 }

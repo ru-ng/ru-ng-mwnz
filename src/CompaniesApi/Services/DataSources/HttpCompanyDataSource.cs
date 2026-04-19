@@ -39,7 +39,7 @@ public sealed class HttpCompanyDataSource(HttpClient httpClient, ILogger<HttpCom
         {
             var reason = $"Upstream returned {(int)response.StatusCode} {response.ReasonPhrase}.";
             logger.LogWarning("Non-success from upstream: {Reason}", reason);
-            return new RawDataResult(RawDataStatus.Found, null, reason);
+            return new RawDataResult(RawDataStatus.Error, null, reason);
         }
 
         try

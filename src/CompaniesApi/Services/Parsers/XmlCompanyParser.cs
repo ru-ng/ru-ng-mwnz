@@ -3,7 +3,7 @@ using CompaniesApi.Models;
 
 namespace CompaniesApi.Services.Parsers;
 
-public class XmlCompanyParser : ICompanyParser
+public sealed class XmlCompanyParser : ICompanyParser
 {
     public Company Parse(string xml)
     {
