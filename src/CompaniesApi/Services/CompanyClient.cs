@@ -6,7 +6,7 @@ namespace CompaniesApi.Services;
 
 public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> logger) : ICompanyClient
 {
-    public async Task<CompanyFetchResult> GetCompanyAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<CompanyResult> GetCompanyAsync(int id, CancellationToken cancellationToken = default)
     {
         var requestUri = $"{id}.xml";
         var upstreamUrl = new Uri(httpClient.BaseAddress!, requestUri).ToString();
@@ -21,7 +21,7 @@ public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> 
         catch (HttpRequestException ex)
         {
             logger.LogError(ex, "Network error requesting {UpstreamUrl}", upstreamUrl);
-            return new CompanyFetchResult(
+            return new CompanyResult(
                 HttpStatusCode.BadGateway,
                 null,
                 $"Upstream request failed: {ex.Message}");
@@ -29,7 +29,7 @@ public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> 
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogError(ex, "Timeout requesting {UpstreamUrl}", upstreamUrl);
-            return new CompanyFetchResult(
+            return new CompanyResult(
                 HttpStatusCode.BadGateway,
                 null,
                 "Upstream request timed out.");
@@ -41,13 +41,13 @@ public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> 
             upstreamUrl);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
-            return new CompanyFetchResult(HttpStatusCode.NotFound, null, null);
+            return new CompanyResult(HttpStatusCode.NotFound, null, null);
 
         if (!response.IsSuccessStatusCode)
         {
             var reason = $"Upstream returned {(int)response.StatusCode} {response.ReasonPhrase}.";
             logger.LogWarning("Non-success from upstream: {Reason}", reason);
-            return new CompanyFetchResult(response.StatusCode, null, reason);
+            return new CompanyResult(response.StatusCode, null, reason);
         }
 
         string xml;
@@ -58,7 +58,7 @@ public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> 
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed reading upstream body from {UpstreamUrl}", upstreamUrl);
-            return new CompanyFetchResult(
+            return new CompanyResult(
                 HttpStatusCode.BadGateway,
                 null,
                 "Failed reading upstream response body.");
@@ -67,12 +67,12 @@ public sealed class CompanyClient(HttpClient httpClient, ILogger<CompanyClient> 
         try
         {
             var company = ParseCompanyFromXml(xml);
-            return new CompanyFetchResult(HttpStatusCode.OK, company, null);
+            return new CompanyResult(HttpStatusCode.OK, company, null);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed parsing XML from {UpstreamUrl}", upstreamUrl);
-            return new CompanyFetchResult(
+            return new CompanyResult(
                 HttpStatusCode.BadGateway,
                 null,
                 $"Failed to parse upstream XML: {ex.Message}");

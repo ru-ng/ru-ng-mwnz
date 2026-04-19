@@ -22,7 +22,7 @@ public sealed class CompaniesEndpointTests
     {
         var stub = new TestCompanyClient
         {
-            Result = new CompanyFetchResult(
+            Result = new CompanyResult(
                 HttpStatusCode.OK,
                 new Company(1, "MWNZ", "..is awesome"),
                 null)
@@ -80,7 +80,7 @@ public sealed class CompaniesEndpointTests
     {
         var stub = new TestCompanyClient
         {
-            Result = new CompanyFetchResult(HttpStatusCode.NotFound, null, null)
+            Result = new CompanyResult(HttpStatusCode.NotFound, null, null)
         };
 
         await using var factory = CreateFactory(stub);
@@ -100,7 +100,7 @@ public sealed class CompaniesEndpointTests
     {
         var stub = new TestCompanyClient
         {
-            Result = new CompanyFetchResult(
+            Result = new CompanyResult(
                 HttpStatusCode.BadGateway,
                 null,
                 "Upstream returned 500 Internal Server Error.")
@@ -133,10 +133,10 @@ public sealed class CompaniesEndpointTests
 
     private sealed class TestCompanyClient : ICompanyClient
     {
-        public CompanyFetchResult Result { get; init; } =
+        public CompanyResult Result { get; init; } =
             new(HttpStatusCode.OK, new Company(1, "x", "y"), null);
 
-        public Task<CompanyFetchResult> GetCompanyAsync(int id, CancellationToken cancellationToken = default) =>
+        public Task<CompanyResult> GetCompanyAsync(int id, CancellationToken cancellationToken = default) =>
             Task.FromResult(Result);
     }
 }
