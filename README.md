@@ -51,8 +51,8 @@ GET /companies/{id}
 
 ## Considerations for production
 
-- **Structured logging** — Replace the current `ILogger` calls with a structured logging provider such as Serilog, configured to emit JSON. Add consistent context properties (e.g. `CompanyId`, `UpstreamUrl`, `StatusCode`) as structured fields on every log event rather than interpolated strings. This makes logs queryable in tools like Seq, Datadog, or Honeycomb without regex parsing.
-- **Distributed tracing and metrics** — Instrument with OpenTelemetry. Add an `ActivitySource` to `CompanyClient` and `HttpCompanyDataSource` to emit spans for each operation, including the upstream HTTP call and the parse step as child spans. Export to a collector (e.g. Honeycomb, Jaeger). Add counters and histograms for upstream latency and error rates so dashboards and alerts can be built on them.
+- **Structured logging** — Replace the current `ILogger` calls with a structured logging provider such as Serilog, configured to emit JSON.
+- **Distributed tracing and metrics** — Instrument with OpenTelemetry.
 
 ## Prerequisites
 
