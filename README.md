@@ -8,17 +8,21 @@ ASP.NET Core 9 controller-based API that exposes `GET /companies/{id}`, loads co
 sequenceDiagram
     participant Client
     participant CompaniesController
-    participant IXmlCompanyClient
-    participant XmlCompanyClient
+    participant CompanyClient
+    participant HttpCompanyDataSource
+    participant XmlCompanyParser
     participant Upstream
 
     Client->>CompaniesController: GET /companies/{id}
     CompaniesController->>CompaniesController: Validate id >= 1
-    CompaniesController->>IXmlCompanyClient: GetCompanyAsync(id)
-    IXmlCompanyClient->>XmlCompanyClient: GetCompanyAsync(id)
-    XmlCompanyClient->>Upstream: GET {id}.xml
-    Upstream-->>XmlCompanyClient: XML or HTTP error
-    XmlCompanyClient-->>CompaniesController: CompanyFetchResult
+    CompaniesController->>CompanyClient: GetCompanyAsync(id)
+    CompanyClient->>HttpCompanyDataSource: GetAsync(id)
+    HttpCompanyDataSource->>Upstream: GET {id}.xml
+    Upstream-->>HttpCompanyDataSource: XML or HTTP error
+    HttpCompanyDataSource-->>CompanyClient: RawDataResult
+    CompanyClient->>XmlCompanyParser: Parse(rawContent)
+    XmlCompanyParser-->>CompanyClient: Company
+    CompanyClient-->>CompaniesController: CompanyResult
     CompaniesController-->>Client: 200 / 400 / 404 / 502 + body
 ```
 
@@ -26,19 +30,29 @@ Request path in code:
 
 ```
 GET /companies/{id}
-  → CompaniesController  (validates id, maps result to HTTP)
-  → IXmlCompanyClient    (abstraction, swap-friendly for tests)
-  → XmlCompanyClient     (HTTP GET, XML parse, structured result)
-  → upstream XML host
+  → CompaniesController      (validates id, maps result to HTTP)
+  → ICompanyClient           (application port — swap-friendly for tests)
+  → CompanyClient            (orchestrator: coordinates data source and parser)
+  → ICompanyDataSource       (driven port — fetch raw content)
+  → HttpCompanyDataSource    (adapter: HTTP GET, returns RawDataResult)
+  → ICompanyParser           (driven port — transform raw content)
+  → XmlCompanyParser         (adapter: LINQ-to-XML, returns Company)
 ```
 
 ## Design decisions
 
-- **Controllers vs minimal APIs** — Controllers were chosen for conventional routing, `[ProducesResponseType]` attributes for OpenAPI, and clarity. A minimal API would work equally well and is slightly leaner; the same layering (`IXmlCompanyClient`) would apply.
-- **`IXmlCompanyClient`** — Decouples the controller from HTTP transport. Integration tests replace the implementation with a stub so you do not need to mock `HttpClient` at the controller boundary.
-- **`CompanyFetchResult` instead of exceptions for upstream failures** — Non-2xx HTTP responses and parse errors are expected operational outcomes, not exceptional control flow. A typed result keeps every branch explicit at the call site.
+- **Controllers vs minimal APIs** — Controllers were chosen for conventional routing, `[ProducesResponseType]` attributes for OpenAPI, and clarity. A minimal API would work equally well and is slightly leaner; the same layering (`ICompanyClient`) would apply.
+- **Ports and adapters (hexagonal architecture)** — Fetching and parsing are separated behind two driven ports: `ICompanyDataSource` and `ICompanyParser`. `CompanyClient` orchestrates them. Swapping in a file-based or database-backed data source, or a JSON parser, requires only a new adapter class and a DI registration change — no changes to the controller, orchestrator, or tests.
+- **`ICompanyClient`** — Decouples the controller from the orchestration layer. Integration tests replace the implementation with a stub so no real HTTP or parsing happens at the controller boundary.
+- **`CompanyResult` instead of exceptions for upstream failures** — Non-2xx HTTP responses and parse errors are expected operational outcomes, not exceptional control flow. A typed result keeps every branch explicit at the call site.
+- **`RawDataResult` is transport-agnostic** — Uses `RawDataStatus` (Found / NotFound / Error) rather than `HttpStatusCode`, so the data source port stays decoupled from HTTP concerns. `CompanyClient` translates outcomes to HTTP status codes only at the boundary where it builds `CompanyResult`.
 - **`AddStandardResilienceHandler`** — Retries, timeouts, circuit breaker, and related policies from **Microsoft.Extensions.Http.Resilience**. Trade-off: the upstream GET may be retried; that is acceptable because reads are idempotent.
 - **`ApiError` with `error` / `error_description`** — Aligns with common OAuth 2.0-style error payloads and reads clearly in logs and clients.
+
+## Considerations for production
+
+- **Structured logging** — Replace the current `ILogger` calls with a structured logging provider such as Serilog, configured to emit JSON. Add consistent context properties (e.g. `CompanyId`, `UpstreamUrl`, `StatusCode`) as structured fields on every log event rather than interpolated strings. This makes logs queryable in tools like Seq, Datadog, or Honeycomb without regex parsing.
+- **Distributed tracing and metrics** — Instrument with OpenTelemetry. Add an `ActivitySource` to `CompanyClient` and `HttpCompanyDataSource` to emit spans for each operation, including the upstream HTTP call and the parse step as child spans. Export to a collector (e.g. Honeycomb, Jaeger). Add counters and histograms for upstream latency and error rates so dashboards and alerts can be built on them.
 
 ## Prerequisites
 
