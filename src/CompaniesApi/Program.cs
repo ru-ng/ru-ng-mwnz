@@ -31,7 +31,7 @@ var upstreamBaseUrl = builder.Configuration["UpstreamBaseUrl"]
 builder.Services.AddHttpClient<HttpCompanyDataSource>(client => { client.BaseAddress = new Uri(upstreamBaseUrl); })
     .AddStandardResilienceHandler();
 
-builder.Services.AddScoped<ICompanyDataSource>(sp => sp.GetRequiredService<HttpCompanyDataSource>());
+builder.Services.AddSingleton<ICompanyDataSource>(sp => sp.GetRequiredService<HttpCompanyDataSource>());
 builder.Services.AddScoped<ICompanyParser, XmlCompanyParser>();
 builder.Services.AddScoped<ICompanyClient, CompanyClient>();
 

@@ -1,5 +1,5 @@
 using System.Net;
-using System.Text;
+using CompaniesApi.Models;
 using CompaniesApi.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,32 +9,18 @@ namespace CompaniesApi.Tests.Services;
 
 public sealed class CompanyClientTests
 {
-    private static CompanyClient CreateClient(HttpMessageHandler handler)
-    {
-        var httpClient = new HttpClient(handler)
-        {
-            BaseAddress = new Uri("https://example.test/xml-api/")
-        };
-        return new CompanyClient(httpClient, NullLogger<CompanyClient>.Instance);
-    }
+    private static readonly Company SomeCompany = new(1, "MWNZ", "..is awesome");
+
+    private static CompanyClient CreateClient(ICompanyDataSource dataSource, ICompanyParser parser) => 
+        new(dataSource, parser, NullLogger<CompanyClient>.Instance);
 
     [Fact]
-    public async Task GetCompanyAsync_ValidXml_ReturnsCompany()
+    public async Task GetCompanyAsync_DataSourceReturnsFound_ReturnsCompany()
     {
-        const string xml = """
-            <Data>
-              <id>1</id>
-              <name>MWNZ</name>
-              <description>..is awesome</description>
-            </Data>
-            """;
+        var sut = CreateClient(
+            new StubDataSource(new RawDataResult(RawDataStatus.Found, "SomeContent", null)),
+            new StubParser(SomeCompany));
 
-        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(xml, Encoding.UTF8, "application/xml")
-        });
-
-        var sut = CreateClient(handler);
         var result = await sut.GetCompanyAsync(1);
 
         result.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -46,10 +32,11 @@ public sealed class CompanyClientTests
     }
 
     [Fact]
-    public async Task GetCompanyAsync_NotFound_Returns404()
+    public async Task GetCompanyAsync_DataSourceReturnsNotFound_Returns404()
     {
-        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
-        var sut = CreateClient(handler);
+        var sut = CreateClient(
+            new StubDataSource(new RawDataResult(RawDataStatus.NotFound, null, null)),
+            new StubParser(SomeCompany));
 
         var result = await sut.GetCompanyAsync(99);
 
@@ -58,26 +45,25 @@ public sealed class CompanyClientTests
     }
 
     [Fact]
-    public async Task GetCompanyAsync_UpstreamError_ReturnsFailureResult()
+    public async Task GetCompanyAsync_DataSourceReturnsError_ReturnsBadGatewayWithDescription()
     {
-        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
-        var sut = CreateClient(handler);
+        var sut = CreateClient(
+            new StubDataSource(new RawDataResult(RawDataStatus.Error, null, "some error")),
+            new StubParser(SomeCompany));
 
         var result = await sut.GetCompanyAsync(1);
 
-        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         result.Company.Should().BeNull();
-        result.ErrorDescription.Should().NotBeNull();
+        result.ErrorDescription.Should().Be("some error");
     }
 
     [Fact]
-    public async Task GetCompanyAsync_MalformedXml_Returns502WithDescription()
+    public async Task GetCompanyAsync_ParserThrows_ReturnsBadGateWayWithDescription()
     {
-        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("not xml", Encoding.UTF8, "application/xml")
-        });
-        var sut = CreateClient(handler);
+        var sut = CreateClient(
+            new StubDataSource(new RawDataResult(RawDataStatus.Found, "SomeContent", null)),
+            new ThrowingParser(new InvalidOperationException("Missing id.")));
 
         var result = await sut.GetCompanyAsync(1);
 
@@ -86,52 +72,19 @@ public sealed class CompanyClientTests
         result.ErrorDescription.Should().NotBeNull().And.ContainEquivalentOf("parse");
     }
 
-    [Fact]
-    public async Task GetCompanyAsync_InvalidRootElement_Returns502()
+    private sealed class StubDataSource(RawDataResult result) : ICompanyDataSource
     {
-        const string xml = "<Wrong><id>1</id></Wrong>";
-        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(xml, Encoding.UTF8, "application/xml")
-        });
-        var sut = CreateClient(handler);
-
-        var result = await sut.GetCompanyAsync(1);
-
-        result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        result.Company.Should().BeNull();
+        public Task<RawDataResult> GetAsync(int id, CancellationToken cancellationToken = default) => 
+            Task.FromResult(result);
     }
 
-    [Fact]
-    public async Task GetCompanyAsync_HttpRequestException_Returns502()
+    private sealed class StubParser(Company company) : ICompanyParser
     {
-        var handler = new ThrowingHandler(new HttpRequestException("connection refused"));
-        var sut = CreateClient(handler);
-
-        var result = await sut.GetCompanyAsync(1);
-
-        result.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        result.Company.Should().BeNull();
-        result.ErrorDescription.Should().NotBeNull().And.Contain("Upstream request failed");
+        public Company Parse(string rawContent) => company;
     }
 
-    private sealed class StubHandler : HttpMessageHandler
+    private sealed class ThrowingParser(Exception ex) : ICompanyParser
     {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _respond;
-
-        public StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) => _respond = respond;
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(_respond(request));
-    }
-
-    private sealed class ThrowingHandler : HttpMessageHandler
-    {
-        private readonly Exception _ex;
-
-        public ThrowingHandler(Exception ex) => _ex = ex;
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromException<HttpResponseMessage>(_ex);
+        public Company Parse(string rawContent) => throw ex;
     }
 }
